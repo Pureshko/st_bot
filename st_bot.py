@@ -1,5 +1,6 @@
 import telebot
 from telebot import types
+import model
 
 class Student():
     def openPerm():
