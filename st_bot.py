@@ -45,6 +45,9 @@ def makeUp(mes):
     if not zhopa == None:
         for i in zhopa:
             students[i[0]] = Student(i[0],i[1],i[2],i[3],i[4])
+    elif 'error' in zhopa:
+        return zhopa
+
 @bot.message_handler(commands=['start'])
 def startBot(message):
     global students
@@ -97,24 +100,26 @@ def registrate(message):
 @bot.message_handler(commands=['add'])
 def addStudent(message):
     mark = message.text.split()
-    if mark[1].isdigit() and message.from_user.id in list(students.keys()):
-        if  students[message.from_user.id].perm == True:
-            if int(mark[1])>=0 and int(mark[1])<=limit:
-                bot.send_message(message.chat.id, f"Congratulatons! You achieve +{mark[1]} stickers")
-                students[message.from_user.id].addSticker(int(mark[1]))
-                el = modelstickers.updateScore(connection,message.chat.id,message.from_user.id,students[message.from_user.id].score)
-                print(el)
-                students[message.from_user.id].perm=False
-                makeUp(message)
+    if len(mark) == 2:
+        if mark[1].isdigit() and message.from_user.id in list(students.keys()):
+            if students[message.from_user.id].perm == True:
+                if int(mark[1])>=0 and int(mark[1])<=limit:
+                    bot.send_message(message.chat.id, f"Congratulatons! You achieve +{mark[1]} stickers")
+                    students[message.from_user.id].addSticker(int(mark[1]))
+                    modelstickers.updateScore(connection,message.chat.id,students[message.from_user.id].id_st,students[message.from_user.id].score)
+                    students[message.from_user.id].perm=False
+                    makeUp(message)
+                else:
+                    bot.send_message(message.chat.id, "Write not negative numbers, write again")
             else:
-                bot.send_message(message.chat.id, "Write not negative numbers, write again")
+                bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
         else:
-            bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
+            if not(message.from_user.id in students.keys()):
+                bot.send_message(message.chat.id, "Please register into the group")
+            else:
+                bot.send_message(message.chat.id, "Please write numbers")
     else:
-        if not(message.from_user.id in students.keys()):
-            bot.send_message(message.chat.id, "Please register into the group")
-        else:
-            bot.send_message(message.chat.id, "Please write numbers")
+        bot.send_message(message.chat.id, "Please, fully write yout achieved number of stickers")
 
 def addTeacher(message):
     u = message.text.split()
@@ -122,16 +127,15 @@ def addTeacher(message):
     for i in students:
         f[students[i].user]=students[i].id_st
     if len(u) == 3:
-        print(u[1], list(f.keys()))
         if (("-" in u[2] and u[2][1:len(u[2])].isdigit()) or u[2].isdigit()) and (u[1] in list(f.keys())):
             if int(u[2])>=0:
                 bot.send_message(message.chat.id, f"{u[1]} achieve {u[2]} stickers by teacher")
                 students[f[u[1]]].addSticker(int(u[2]))
-                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,students[message.from_user.id].score)
+                modelstickers.updateScore(connection,message.chat.id,students[f[u[1]]].id_st,students[message.from_user.id].score)
             else:
                 bot.send_message(message.chat.id, f"{u[1]} lost {u[2]} stickers by teacher")
                 students[f[u[1]]].addSticker(int(u[2]))
-                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,students[message.from_user.id].score)
+                modelstickers.updateScore(connection,message.chat.id,students[f[u[1]]].id_st,students[message.from_user.id].score)
             makeUp(message)
         else:
             bot.send_message(message.chat.id, f"You write wrong number or student username")
@@ -154,16 +158,21 @@ def limitState(message):
         bot.send_message(message.chat.id, "Please write numbers")
 @bot.message_handler(commands=['stat'])
 def TopStudent(message):
-    makeUp(message)
-    bot.send_message(message.chat.id, show())
+    f = makeUp(message)
+    if f == None:
+        bot.send_message(message.chat.id, show())
+    elif 'no such table' in f:
+        bot.send_message(message.chat.id, "You must write /start command")
 @bot.message_handler(commands=['rename'])
 def rename(message):
     g = message.text.split()
     if len(g)==3:
-        modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
-        zhopa = modelstickers.getStudents(connection,message.chat.id)
-        makeUp(message)
-        bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
+        if message.from_user.id in list(students.keys()):
+            modelstickers.updateName(connection,message.chat.id,students[message.from_user.id].id_st,g[1],g[2])
+            makeUp(message)
+            bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
+        else:
+            bot.send_message(message.chat.id, "Please register into the group")
     else:
         bot.send_message(message.chat.id, f"Please write fully student firstname and surname")
 bot.polling(none_stop=True)
