@@ -40,8 +40,8 @@ def isUnique(studentId):
             flag = False;
             break;
     return flag;
-def makeUp():
-    zhopa = modelstickers.getStudents(connection,message.chat.id)
+def makeUp(mes):
+    zhopa = modelstickers.getStudents(connection,mes.chat.id)
     if not zhopa == None:
         for i in zhopa:
             students[i[0]] = Student(i[0],i[1],i[2],i[3],i[4])
@@ -85,7 +85,7 @@ def registrate(message):
             perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,students[message.from_user.id].fname,students[message.from_user.id].sname,students[message.from_user.id].score,students[message.from_user.id].user)
             if perem == None:
                 bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
-                makeUp()
+                makeUp(message)
             else:
                 bot.send_message(message.chat.id,perem)
 
@@ -105,7 +105,7 @@ def addStudent(message):
                 el = modelstickers.updateScore(connection,message.chat.id,message.from_user.id,students[message.from_user.id].score)
                 print(el)
                 students[message.from_user.id].perm=False
-                makeUp()
+                makeUp(message)
             else:
                 bot.send_message(message.chat.id, "Write not negative numbers, write again")
         else:
@@ -132,7 +132,7 @@ def addTeacher(message):
                 bot.send_message(message.chat.id, f"{u[1]} lost {u[2]} stickers by teacher")
                 students[f[u[1]]].addSticker(int(u[2]))
                 modelstickers.updateScore(connection,message.chat.id,message.from_user.id,students[message.from_user.id].score)
-            makeUp()
+            makeUp(message)
         else:
             bot.send_message(message.chat.id, f"You write wrong number or student username")
     else:
@@ -154,7 +154,7 @@ def limitState(message):
         bot.send_message(message.chat.id, "Please write numbers")
 @bot.message_handler(commands=['stat'])
 def TopStudent(message):
-    makeUp()
+    makeUp(message)
     bot.send_message(message.chat.id, show())
 @bot.message_handler(commands=['rename'])
 def rename(message):
@@ -162,7 +162,7 @@ def rename(message):
     if len(g)==3:
         modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
         zhopa = modelstickers.getStudents(connection,message.chat.id)
-        makeUp()
+        makeUp(message)
         bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
     else:
         bot.send_message(message.chat.id, f"Please write fully student firstname and surname")
