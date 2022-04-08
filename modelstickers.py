@@ -134,6 +134,50 @@ def updateScore(connection,mes,id_c1,score1):
         """
         return execute_query(connection, update_post_description,score1,id_c1)
 
+def closePermis(connection,mes,id_c1):
+    mes = str(mes)
+    if "-" in mes:
+        update_post_description = f"""
+        UPDATE
+          chat_{mes[1:len(mes)]}
+        SET
+          permis = ?
+        WHERE
+          id_st = ?
+        """
+        return execute_query(connection, update_post_description,0,id_c1)
+    else:
+        update_post_description = f"""
+        UPDATE
+          chat_{mes}
+        SET
+          permis = ?
+        WHERE
+           id_st = ?
+        """
+        return execute_query(connection, update_post_description,0,id_c1)
+def openPermis(connection,mes,id_c1):
+    mes = str(mes)
+    if "-" in mes:
+        update_post_description = f"""
+        UPDATE
+          chat_{mes[1:len(mes)]}
+        SET
+          permis = ?
+        WHERE
+          id_st = ?
+        """
+        return execute_query(connection, update_post_description,1,id_c1)
+    else:
+        update_post_description = f"""
+        UPDATE
+          chat_{mes}
+        SET
+          permis = ?
+        WHERE
+           id_st = ?
+        """
+        return execute_query(connection, update_post_description,1,id_c1)
 
 def getStudents(connection,mes):
     mes = str(mes)

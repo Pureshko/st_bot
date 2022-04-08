@@ -97,29 +97,7 @@ def registrate(message):
     else:
         bot.send_message(message.chat.id,"Please write your firstname and surname fully")
 
-@bot.message_handler(commands=['add'])
-def addStudent(message):
-    mark = message.text.split()
-    if len(mark) == 2:
-        if mark[1].isdigit() and message.from_user.id in list(students.keys()):
-            if students[message.from_user.id].perm == True:
-                if int(mark[1])>=0 and int(mark[1])<=limit:
-                    bot.send_message(message.chat.id, f"Congratulatons! You achieve +{mark[1]} stickers")
-                    students[message.from_user.id].addSticker(int(mark[1]))
-                    modelstickers.updateScore(connection,message.chat.id,students[message.from_user.id].id_st,students[message.from_user.id].score)
-                    students[message.from_user.id].perm=False
-                    makeUp(message)
-                else:
-                    bot.send_message(message.chat.id, "Write not negative numbers, write again")
-            else:
-                bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
-        else:
-            if not(message.from_user.id in students.keys()):
-                bot.send_message(message.chat.id, "Please register into the group")
-            else:
-                bot.send_message(message.chat.id, "Please write numbers")
-    else:
-        bot.send_message(message.chat.id, "Please, fully write yout achieved number of stickers")
+
 
 def addTeacher(message):
     u = message.text.split()
@@ -149,6 +127,7 @@ def endCount(message):
         students[i].perm=False
     bot.send_message(message.chat.id, send_mess)
 def limitState(message):
+    limit = 0
     d = message.text.split()
     if d[1].isdigit():
         global limit
@@ -156,6 +135,31 @@ def limitState(message):
         limit=int(d[1])
     else:
         bot.send_message(message.chat.id, "Please write numbers")
+    msg = bot.reply_to(message,"You can start add stickers")
+    bot.limitState_next_step_handler(msg,limit,addStudent)
+
+def addStudent(message,limit):
+    mark = message.text.split()
+    if len(mark) == 2:
+        if mark[1].isdigit() and message.from_user.id in list(students.keys()):
+            if students[message.from_user.id].perm == True:
+                if int(mark[1])>=0 and int(mark[1])<=limit:
+                    bot.send_message(message.chat.id, f"Congratulatons! You achieve +{mark[1]} stickers")
+                    students[message.from_user.id].addSticker(int(mark[1]))
+                    modelstickers.updateScore(connection,message.chat.id,students[message.from_user.id].id_st,students[message.from_user.id].score)
+                    students[message.from_user.id].perm=False
+                    makeUp(message)
+                else:
+                    bot.send_message(message.chat.id, "Write not negative numbers, write again")
+            else:
+                bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
+        else:
+            if not(message.from_user.id in students.keys()):
+                bot.send_message(message.chat.id, "Please register into the group")
+            else:
+                bot.send_message(message.chat.id, "Please write numbers")
+    else:
+        bot.send_message(message.chat.id, "Please, fully write yout achieved number of stickers")
 @bot.message_handler(commands=['stat'])
 def TopStudent(message):
     f = makeUp(message)
