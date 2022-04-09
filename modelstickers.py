@@ -4,7 +4,7 @@ from sqlite3 import Error
 def create_connection(path):
     connection = None
     try:
-        connection = sqlite3.connect(path)
+        connection = sqlite3.connect(path,check_same_thread=False)
         print("Connection to SQLite DB successful")
     except Error as e:
         print(f"The error '{e}' occurred")
@@ -35,8 +35,8 @@ def execute_query(connection, query, *add):
             cursor.execute(query,(add[0],add[1],add[2]))
             connection.commit()
             print("Query executed successfully")
-        elif len(add)==5:
-            cursor.execute(query,(add[0],add[1],add[2],add[3],add[4]))
+        elif len(add)==6:
+            cursor.execute(query,(add[0],add[1],add[2],add[3],add[4],add[5]))
             connection.commit()
             print("Query executed successfully")
     except Error as e:
@@ -52,7 +52,8 @@ def createTable(connection,mes):
             fname TEXT NOT NULL,
             sname TEXT NOT NULL,
             score INTEGER NOT NULL,
-            username TEXT NOT NULL
+            username TEXT NOT NULL,
+            permis INTEGER NOT NULL
         );"""
         return execute_query(connection, boom)
     else:
@@ -62,28 +63,29 @@ def createTable(connection,mes):
             fname TEXT NOT NULL,
             sname TEXT NOT NULL,
             score INTEGER NOT NULL,
-            username TEXT NOT NULL
+            username TEXT NOT NULL,
+            permis INTEGER NOT NULL
         );"""
         return execute_query(connection, boom)
 
-def insertStudent(connection,mes,id_c1,fname1,sname1,score1,username1):
+def insertStudent(connection,mes,id_c1,fname1,sname1,score1,username1,permis1):
     mes = str(mes)
     if "-" in mes:
         boom = f"""
         INSERT OR IGNORE INTO
-            chat_{mes[1:len(mes)]} (`id_st`, `fname`, `sname`, `score`,`username`)
+            chat_{mes[1:len(mes)]} (`id_st`, `fname`, `sname`, `score`,`username`,`permis`)
         VALUES
-            (?,?,?,?,?)
+            (?,?,?,?,?,?)
         """
-        return execute_query(connection,boom,id_c1,fname1,sname1,score1,username1)
+        return execute_query(connection,boom,id_c1,fname1,sname1,score1,username1,permis1)
     else:
         boom = f"""
         INSERT OR IGNORE INTO
-            chat_{mes} (`id_st`, `fname`, `sname`, `score`,`username`)
+            chat_{mes} (`id_st`, `fname`, `sname`, `score`,`username`,`permis`)
         VALUES
-            (?,?,?,?,?)
+            (?,?,?,?,?,?)
         """
-        return execute_query(connection,boom,id_c1,fname1,sname1,score1,username1)
+        return execute_query(connection,boom,id_c1,fname1,sname1,score1,username1,permis1)
 
 def updateName(connection,mes,id_c1,fname1,sname1):
     mes = str(mes)

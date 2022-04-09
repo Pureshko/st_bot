@@ -2,7 +2,6 @@ import telebot
 from telebot import types
 import modelstickers
 import os
-
 class Student():
     def openPerm():
         self.perm = True
@@ -10,54 +9,74 @@ class Student():
         self.perm = False
     def addSticker(self,stickers):
         self.score+=stickers
-    def __init__(self,id_c,firstname,surname,score,user):
+    def __init__(self,id_c,firstname,surname,score,user,permis):
         self.fname = firstname
         self.sname = surname
-        self.score = 0
+        self.score = score
         self.user = user
         self.id_st = id_c
-        self.perm = False
+        self.perm = permis
 
 bot = telebot.TeleBot(os.environ['TBOTTOKEN'])
 connection = modelstickers.create_connection(os.environ['DBPATH'])
-students = {}
-limit = 0
-def show():
+limit = {}
+def show(mes):
+    zhopa = modelstickers.getStudents(connection,mes)
     f=[]
     stc = "Top students. \n"
-    for i in students:
-        f.append(students[i])
-    f.sort(key = lambda x:x.score)
-    f.reverse()
-    for x in range(len(f)):
-        stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+" "+str(f[x].score)+". \n"
-    return stc
-def isUnique(studentId):
-    global students
-    flag = True
-    for student in students:
-        if student == studentId:
-            flag = False;
-            break;
-    return flag;
-def makeUp(mes):
-    zhopa = modelstickers.getStudents(connection,mes.chat.id)
-    if not zhopa == None:
+    if zhopa == []:
+        return stc
+    elif 'no such table' in zhopa:
+        return "You must write /start command"
+    else:
         for i in zhopa:
-            students[i[0]] = Student(i[0],i[1],i[2],i[3],i[4])
-    elif 'error' in zhopa:
-        return zhopa
+            f.append(Student(i[0],i[1],i[2],i[3],i[4],i[5]))
+        f.sort(key = lambda x:x.score)
+        f.reverse()
+        for x in range(len(f)):
+            stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+f" ({f[x].user}) "+str(f[x].score)+". \n"
+        return stc
 
+def isUnique(mes,studentId):
+    zhopa = modelstickers.getStudents(connection,mes)
+    flag = True
+    if 'no such table' in zhopa:
+        bot.send_message(mes, "You must write /start command")
+    else:
+        for student in zhopa:
+            if student[0] == studentId:
+                flag = False;
+                break;
+        return flag;
+
+def setStudents(mes):
+    djaga = {}
+    students = modelstickers.getStudents(connection,mes)
+    if students == []:
+        return {}
+    elif 'no such table' in students:
+        bot.send_message(mes, "You must write /start command")
+        return {}
+    else:
+        for i in students:
+            djaga[i[0]] = Student(i[0],i[1],i[2],i[3],i[4],i[5])
+        return djaga
+def setUser(mes):
+    djaga = {}
+    students = modelstickers.getStudents(connection,mes)
+    if students == []:
+        return {}
+    elif 'no such table' in students:
+        bot.send_message(mes, "You must write /start command")
+        return {}
+    else:
+        for i in students:
+            djaga[i[4]] = Student(i[0],i[1],i[2],i[3],i[4],i[5])
+        return djaga
 @bot.message_handler(commands=['start'])
 def startBot(message):
-    global students
     perem = modelstickers.createTable(connection,message.chat.id)
     print(perem)
-    if perem==None:
-        zhopa = modelstickers.getStudents(connection,message.chat.id)
-        if not zhopa == None:
-            for i in zhopa:
-                students[i[0]] = Student(i[0],i[1],i[2],i[3],i[4])
     bot.send_message(message.chat.id, "Welcome to stickers bot, write /help command to know more about this bot")
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -68,9 +87,14 @@ def startcount(message):
     if bot.get_chat_member(message.chat.id,message.from_user.id).status in ['administrator','creator']:
         if "/startcount" in message.text:
             send_mess = f"{message.from_user.username} allow to write your amount of stickers. You can ONE time. So, be carefully and write stickers correctly"
-            for i in students:
-                students[i].perm=True
-            bot.send_message(message.chat.id, send_mess)
+            zhopa = modelstickers.getStudents(connection,message.chat.id)
+            if 'no such table' in zhopa:
+                bot.send_message(message.chat.id, "You must write /start command")
+            else:
+                for i in zhopa:
+                    modelstickers.openPermis(connection, message.chat.id,i[0])
+                bot.send_message(message.chat.id, send_mess)
+
         elif "/endcount" in message.text:
             endCount(message)
         elif "/limit" in message.text:
@@ -83,78 +107,74 @@ def startcount(message):
 def registrate(message):
     st = message.text.split()
     if len(st)==3:
-        if isUnique(message.from_user.id):
-            students[message.from_user.id] = Student(message.from_user.id,st[1],st[2],0,message.from_user.username)
-            perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,students[message.from_user.id].fname,students[message.from_user.id].sname,students[message.from_user.id].score,students[message.from_user.id].user)
+        text = isUnique(message.chat.id,message.from_user.id)
+        if text:
+            perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,st[1],st[2],0,message.from_user.username,0)
             if perem == None:
                 bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
-                makeUp(message)
             else:
                 bot.send_message(message.chat.id,perem)
-
-        else:
+        elif text == False:
             bot.send_message(message.chat.id,f"{message.from_user.username} already was registrated")
     else:
         bot.send_message(message.chat.id,"Please write your firstname and surname fully")
 
-
-
 def addTeacher(message):
     u = message.text.split()
-    f={}
-    for i in students:
-        f[students[i].user]=students[i].id_st
+    f = setUser(message.chat.id)
     if len(u) == 3:
         if (("-" in u[2] and u[2][1:len(u[2])].isdigit()) or u[2].isdigit()) and (u[1] in list(f.keys())):
             if int(u[2])>=0:
                 bot.send_message(message.chat.id, f"{u[1]} achieve {u[2]} stickers by teacher")
-                students[f[u[1]]].addSticker(int(u[2]))
-                modelstickers.updateScore(connection,message.chat.id,students[f[u[1]]].id_st,students[message.from_user.id].score)
+                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,f[message.from_user.username].score+int(u[2]))
             else:
                 bot.send_message(message.chat.id, f"{u[1]} lost {u[2]} stickers by teacher")
-                students[f[u[1]]].addSticker(int(u[2]))
-                modelstickers.updateScore(connection,message.chat.id,students[f[u[1]]].id_st,students[message.from_user.id].score)
-            makeUp(message)
+                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,f[message.from_user.username].score+int(u[2]))
         else:
             bot.send_message(message.chat.id, f"You write wrong number or student username")
     else:
         bot.send_message(message.chat.id, f"Please write fully student username and number of stickers")
 
-
 def endCount(message):
     send_mess = f"{message.from_user.username} close access to write your amount of stickers. You can write your stickers next time"
-    for i in students:
-        students[i].perm=False
-    bot.send_message(message.chat.id, send_mess)
+    zhopa = modelstickers.getStudents(connection,message.chat.id)
+    if 'no such table' in zhopa:
+        bot.send_message(message.chat.id, "You must write /start command")
+    else:
+        for i in zhopa:
+            modelstickers.closePermis(connection, message.chat.id,i[0])
+        bot.send_message(message.chat.id, send_mess)
+
+
 def limitState(message):
-    limit = 0
     d = message.text.split()
     if d[1].isdigit():
-        global limit
         bot.send_message(message.chat.id, f"Teacher set limit of stickers.Limit of stickers is {d[1]}")
-        limit=int(d[1])
+        limit[message.chat.id]=int(d[1])
     else:
         bot.send_message(message.chat.id, "Please write numbers")
-    msg = bot.reply_to(message,"You can start add stickers")
-    bot.limitState_next_step_handler(msg,limit,addStudent)
 
-def addStudent(message,limit):
+@bot.message_handler(commands=['add'])
+def addStudent(message):
+    global limit
     mark = message.text.split()
+    f = setStudents(message.chat.id)
     if len(mark) == 2:
-        if mark[1].isdigit() and message.from_user.id in list(students.keys()):
-            if students[message.from_user.id].perm == True:
-                if int(mark[1])>=0 and int(mark[1])<=limit:
+        if mark[1].isdigit() and message.from_user.id in list(f.keys()):
+            if f[message.from_user.id].perm == 1 and message.chat.id in list(limit.keys()):
+                if int(mark[1])>=0 and int(mark[1])<=limit[message.chat.id]:
                     bot.send_message(message.chat.id, f"Congratulatons! You achieve +{mark[1]} stickers")
-                    students[message.from_user.id].addSticker(int(mark[1]))
-                    modelstickers.updateScore(connection,message.chat.id,students[message.from_user.id].id_st,students[message.from_user.id].score)
-                    students[message.from_user.id].perm=False
-                    makeUp(message)
+                    modelstickers.updateScore(connection,message.chat.id,message.from_user.id,f[message.from_user.id].score+int(mark[1]))
+                    modelstickers.closePermis(connection,message.chat.id,message.from_user.id)
                 else:
-                    bot.send_message(message.chat.id, "Write not negative numbers, write again")
+                    bot.send_message(message.chat.id, f"Please write number of stickers from 0 to {limit[message.chat.id]}")
             else:
-                bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
+                if f[message.from_user.id].perm == 0:
+                    bot.send_message(message.chat.id, "Sorry you use your chance. If you less more than you have or vice versa, please ask from teacher that you write wrong number and teacher can write correctly")
+                elif message.chat.id not in list(limit.keys()):
+                    bot.send_message(message.chat.id, "Teacher, please set limit of number of stickers")
         else:
-            if not(message.from_user.id in students.keys()):
+            if not(message.from_user.id in f.keys()):
                 bot.send_message(message.chat.id, "Please register into the group")
             else:
                 bot.send_message(message.chat.id, "Please write numbers")
@@ -162,18 +182,15 @@ def addStudent(message,limit):
         bot.send_message(message.chat.id, "Please, fully write yout achieved number of stickers")
 @bot.message_handler(commands=['stat'])
 def TopStudent(message):
-    f = makeUp(message)
-    if f == None:
-        bot.send_message(message.chat.id, show())
-    elif 'no such table' in f:
-        bot.send_message(message.chat.id, "You must write /start command")
+    bot.send_message(message.chat.id, show(message.chat.id))
+
 @bot.message_handler(commands=['rename'])
 def rename(message):
     g = message.text.split()
+    f = setStudents(message.chat.id)
     if len(g)==3:
-        if message.from_user.id in list(students.keys()):
-            modelstickers.updateName(connection,message.chat.id,students[message.from_user.id].id_st,g[1],g[2])
-            makeUp(message)
+        if message.from_user.id in list(f.keys()):
+            modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
             bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
         else:
             bot.send_message(message.chat.id, "Please register into the group")
