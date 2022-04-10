@@ -34,7 +34,7 @@ def show(mes):
         f.sort(key = lambda x:x.score)
         f.reverse()
         for x in range(len(f)):
-            stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+str(f[x].score)+". \n"
+            stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+" "+str(f[x].score)+". \n"
         return stc
 
 def isUnique(mes,studentId):
@@ -120,7 +120,7 @@ def registrate(message):
     if len(st)==3:
         text = isUnique(message.chat.id,message.from_user.id)
         if text:
-            if idNameUnique(message.chat.id,u[1],u[2]):
+            if idNameUnique(message.chat.id,st[1],st[2]):
                 perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,st[1],st[2],0,message.from_user.username,0)
                 if perem == None:
                     bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
@@ -138,10 +138,10 @@ def addTeacher(message):
         if (("-" in u[3] and u[3][1:len(u[3])].isdigit()) or u[3].isdigit()) and ((u[1]+u[2]) in list(f.keys())):
             if int(u[3])>=0:
                 bot.send_message(message.chat.id, f"{u[1]} {u[2]} achieve {u[3]} stickers by teacher")
-                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[2]))
+                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[3]))
             else:
                 bot.send_message(message.chat.id, f"{u[1]} {u[2]} lost {u[3]} stickers by teacher")
-                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[2]))
+                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[3]))
         else:
             bot.send_message(message.chat.id, f"You write wrong number or student username")
     else:
