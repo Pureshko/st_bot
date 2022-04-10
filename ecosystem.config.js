@@ -1,22 +1,11 @@
 module.exports = {
   apps : [{
-    script: 'index.js',
-    watch: '.'
-  }, {
-    script: './service-worker/',
-    watch: ['./service-worker']
-  }],
-
-  deploy : {
-    production : {
-      user : 'SSH_USERNAME',
-      host : 'SSH_HOSTMACHINE',
-      ref  : 'origin/master',
-      repo : 'GIT_REPOSITORY',
-      path : 'DESTINATION_PATH',
-      'pre-deploy-local': '',
-      'post-deploy' : 'npm install && pm2 reload ecosystem.config.js --env production',
-      'pre-setup': ''
+    name   : "st_bot",
+    script : "./st_bot.py",
+    watch: true,
+    env: {
+       TBOTTOKEN: "5268370640:AAGLuB_lWaM70mS4bOGb8YHDP4q60qp-Atw",
+       DBPATH: "class.db"
     }
-  }
+  }]
 };
