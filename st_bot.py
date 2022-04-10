@@ -17,8 +17,9 @@ class Student():
         self.id_st = id_c
         self.perm = permis
 
-bot = telebot.TeleBot(os.environ['TBOTTOKEN'])
-connection = modelstickers.create_connection(os.environ['DBPATH'])
+
+bot = telebot.TeleBot('5268370640:AAGLuB_lWaM70mS4bOGb8YHDP4q60qp-Atw')
+connection = modelstickers.create_connection('class.db')
 limit = {}
 def show(mes):
     zhopa = modelstickers.getStudents(connection,mes)
