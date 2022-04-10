@@ -204,7 +204,7 @@ def rename(message):
     f = setStudents(message.chat.id)
     if len(g)==3:
         if message.from_user.id in list(f.keys()):
-            if isNameUnique(message.chat.id, g[1],g[2]:)
+            if idNameUnique(message.chat.id, g[1],g[2]):
                 modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
                 bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
             else:
