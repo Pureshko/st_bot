@@ -126,6 +126,8 @@ def registrate(message):
                     bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
                 else:
                     bot.send_message(message.chat.id,perem)
+            else:
+                bot.send_message(message.chat.id, f"This name already registered")
         elif text == False:
             bot.send_message(message.chat.id,f"{message.from_user.username} already was registrated")
     else:
@@ -202,8 +204,11 @@ def rename(message):
     f = setStudents(message.chat.id)
     if len(g)==3:
         if message.from_user.id in list(f.keys()):
-            modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
-            bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
+            if isNameUnique(message.chat.id, g[1],g[2]:)
+                modelstickers.updateName(connection,message.chat.id,message.from_user.id,g[1],g[2])
+                bot.send_message(message.chat.id, f"Now you are {g[1]} {g[2]}")
+            else:
+                bot.send_message(message.chat.id, f"This name already registered")
         else:
             bot.send_message(message.chat.id, "Please register into the group")
     else:
