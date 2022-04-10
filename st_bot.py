@@ -34,7 +34,7 @@ def show(mes):
         f.sort(key = lambda x:x.score)
         f.reverse()
         for x in range(len(f)):
-            stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+f" ({f[x].user}) "+str(f[x].score)+". \n"
+            stc+=str(x+1)+". "+f[x].fname+" "+f[x].sname+str(f[x].score)+". \n"
         return stc
 
 def isUnique(mes,studentId):
@@ -48,7 +48,18 @@ def isUnique(mes,studentId):
                 flag = False;
                 break;
         return flag;
-
+def idNameUnique(mes,fname,sname):
+    zhopa = modelstickers.getStudents(connection,mes)
+    flag = True
+    if 'no such table' in zhopa:
+        bot.send_message(mes, "You must write /start command")
+    else:
+        for student in zhopa:
+            if student[1] == fname and student[2] == sname:
+                flag = False;
+                break;
+        return flag;
+    
 def setStudents(mes):
     djaga = {}
     students = modelstickers.getStudents(connection,mes)
@@ -71,7 +82,7 @@ def setUser(mes):
         return {}
     else:
         for i in students:
-            djaga[i[4]] = Student(i[0],i[1],i[2],i[3],i[4],i[5])
+            djaga[i[1]+i[2]] = Student(i[0],i[1],i[2],i[3],i[4],i[5])
         return djaga
 @bot.message_handler(commands=['start'])
 def startBot(message):
@@ -80,7 +91,7 @@ def startBot(message):
     bot.send_message(message.chat.id, "Welcome to stickers bot, write /help command to know more about this bot")
 @bot.message_handler(commands=['help'])
 def help(message):
-    bot.send_message(message.chat.id,"You have this list of commands.\nStudent can write this commands\n/add {number of stickers} #this command add number of stickers\n/reg {firstname} {surname} #this command registrate student \n /stat #show statistics of students!!!Allows to teacher!!!\n /rename {firstname} {surname} #rename student name\n Teacher commnads\n /startcount #allows to student write message to add their number of stickers\n /endcount #disallow to students add their number of stickers\n /limit {limit of stickers} #create limit of stickers that students can not overcome\n /addStudent {student username} {number of stickers} #teacher can add stickers to student or remove if write negative number",parse_mode="html")
+    bot.send_message(message.chat.id,"You have this list of commands.\nStudent can write this commands\n/add {number of stickers} #this command add number of stickers\n/reg {firstname} {surname} #this command registrate student \n /stat #show statistics of students!!!Allows to teacher!!!\n /rename {firstname} {surname} #rename student name\n Teacher commnads\n /startcount #allows to student write message to add their number of stickers\n /endcount #disallow to students add their number of stickers\n /limit {limit of stickers} #create limit of stickers that students can not overcome\n /addStudent {student firstname} {student surname} {number of stickers} #teacher can add stickers to student or remove if write negative number",parse_mode="html")
 
 @bot.message_handler(commands=['startcount','endcount','limit','addStudent'])
 def startcount(message):
@@ -109,11 +120,12 @@ def registrate(message):
     if len(st)==3:
         text = isUnique(message.chat.id,message.from_user.id)
         if text:
-            perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,st[1],st[2],0,message.from_user.username,0)
-            if perem == None:
-                bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
-            else:
-                bot.send_message(message.chat.id,perem)
+            if idNameUnique(message.chat.id,u[1],u[2]):
+                perem =modelstickers.insertStudent(connection,message.chat.id,message.from_user.id,st[1],st[2],0,message.from_user.username,0)
+                if perem == None:
+                    bot.send_message(message.chat.id,f"Congratulations! {st[1]} {st[2]} was joined to our group")
+                else:
+                    bot.send_message(message.chat.id,perem)
         elif text == False:
             bot.send_message(message.chat.id,f"{message.from_user.username} already was registrated")
     else:
@@ -122,14 +134,14 @@ def registrate(message):
 def addTeacher(message):
     u = message.text.split()
     f = setUser(message.chat.id)
-    if len(u) == 3:
-        if (("-" in u[2] and u[2][1:len(u[2])].isdigit()) or u[2].isdigit()) and (u[1] in list(f.keys())):
-            if int(u[2])>=0:
-                bot.send_message(message.chat.id, f"{u[1]} achieve {u[2]} stickers by teacher")
-                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,f[message.from_user.username].score+int(u[2]))
+    if len(u) == 4:
+        if (("-" in u[3] and u[3][1:len(u[3])].isdigit()) or u[3].isdigit()) and ((u[1]+u[2]) in list(f.keys())):
+            if int(u[3])>=0:
+                bot.send_message(message.chat.id, f"{u[1]} {u[2]} achieve {u[3]} stickers by teacher")
+                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[2]))
             else:
-                bot.send_message(message.chat.id, f"{u[1]} lost {u[2]} stickers by teacher")
-                modelstickers.updateScore(connection,message.chat.id,message.from_user.id,f[message.from_user.username].score+int(u[2]))
+                bot.send_message(message.chat.id, f"{u[1]} {u[2]} lost {u[3]} stickers by teacher")
+                modelstickers.updateScore(connection,message.chat.id,f[u[1]+u[2]].id_st,f[u[1]+u[2]].score+int(u[2]))
         else:
             bot.send_message(message.chat.id, f"You write wrong number or student username")
     else:
